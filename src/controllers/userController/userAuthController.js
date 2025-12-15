@@ -56,12 +56,12 @@ const generateMagicToken = (userId) => {
 // });
 
 const transporter = nodemailer.createTransport({
-  host: "mail.smtp2go.com",
-  port: 2525, // you can also use 587 or 8025
-  secure: false, // false for TLS ports (2525/587)
+  host: process.env.SMTP_HOST || "email-smtp.eu-north-1.amazonaws.com",
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
   auth: {
-    user: "aayeu", // your SMTP2GO username
-    pass: "5FF9OGj7SJbENQ6S", // your SMTP2GO password
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
 });
 

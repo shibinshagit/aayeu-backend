@@ -248,7 +248,7 @@ module.exports.updateOrderStatus = catchAsync(async (req, res, next) => {
 
     return sendResponse(res, 200, true, "Order updated", updated);
   } catch (err) {
-    await client.query("ROLLBACK").catch(() => {});
+    await client.query("ROLLBACK").catch(() => { });
     return next(err);
   } finally {
     client.release();
@@ -256,12 +256,12 @@ module.exports.updateOrderStatus = catchAsync(async (req, res, next) => {
 });
 
 const transporter = nodemailer.createTransport({
-  host: "mail.smtp2go.com",
-  port: 2525, // you can also use 587 or 8025
-  secure: false, // false for TLS ports (2525/587)
+  host: process.env.SMTP_HOST || "email-smtp.eu-north-1.amazonaws.com",
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
   auth: {
-    user: "aayeu", // your SMTP2GO username
-    pass: "5FF9OGj7SJbENQ6S", // your SMTP2GO password
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
 });
 
@@ -365,9 +365,8 @@ module.exports.cancelOrder = catchAsync(async (req, res, next) => {
     // STEP 5: Send Cancellation Email
     // --------------------------------------------
     const mailOptions = {
-      from: `"${process.env.EMAIL_SENDER_NAME || "Support"}" <${
-        process.env.SMTP_USER
-      }>`,
+      from: `"${process.env.EMAIL_SENDER_NAME || "Support"}" <${process.env.SMTP_USER
+        }>`,
       to: email,
       subject: `Order Cancelled - ${order_id}`,
       html: `
@@ -375,11 +374,10 @@ module.exports.cancelOrder = catchAsync(async (req, res, next) => {
           <h2>Hi ${name},</h2>
           <p>Your order <strong>${order_id}</strong> has been cancelled by our support team.</p>
 
-          ${
-            reason
-              ? `<p><strong>Reason:</strong> ${reason}</p>`
-              : `<p>The cancellation was processed by our support team.</p>`
-          }
+          ${reason
+          ? `<p><strong>Reason:</strong> ${reason}</p>`
+          : `<p>The cancellation was processed by our support team.</p>`
+        }
 
           <p>If the payment was already processed, the refund will be initiated to your original mode of payment.</p>
 
@@ -400,7 +398,7 @@ module.exports.cancelOrder = catchAsync(async (req, res, next) => {
       restored_stock: items.length,
     });
   } catch (err) {
-    await client.query("ROLLBACK").catch(() => {});
+    await client.query("ROLLBACK").catch(() => { });
     console.error("cancelOrder error:", err);
     return next(new AppError(err.message || "Failed to cancel order", 500));
   } finally {
@@ -488,7 +486,7 @@ module.exports.updatePaymentStatusAfterCancel = catchAsync(
         }
       );
     } catch (err) {
-      await client.query("ROLLBACK").catch(() => {});
+      await client.query("ROLLBACK").catch(() => { });
       console.error("updatePaymentStatusAfterCancel error:", err);
       return next(
         new AppError(err.message || "Failed to update payment status", 500)
