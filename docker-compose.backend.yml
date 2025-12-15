@@ -1,0 +1,69 @@
+services:
+  # ==========================================
+  # DATABASES
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    env_file:
+      - ./ecommerce-backend-main/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+    ports:
+      - "6379:6379"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" 
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - app_network
+
+  # ==========================================
+  # BACKEND
+  # ==========================================
+  backend:
+    build: ./ecommerce-backend-main
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./ecommerce-backend-main/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+      - ES_NODE_URL=http://elasticsearch:9200
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  es_data:
+
+networks:
+  app_network:
+    driver: bridge

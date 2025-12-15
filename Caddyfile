@@ -1,0 +1,26 @@
+{
+    # Global Options
+    email no-reply@aayeu.com
+}
+
+# Backend API
+api.aayeu.com {
+    reverse_proxy localhost:5000
+}
+
+# Main Domain - Maintenance Page
+aayeu.com, www.aayeu.com {
+    root * /var/www/aayeu
+    file_server {
+        index maintenance.html
+    }
+    
+    # Redirect all other paths to root to show maintenance page
+    try_files {path} /maintenance.html
+}
+
+# Admin Domain - Redirect to Vercel
+admin.aayeu.com {
+    redir https://aayeu-admin.vercel.app{uri}
+}
+
