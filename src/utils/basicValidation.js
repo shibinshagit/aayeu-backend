@@ -26,3 +26,15 @@ module.exports.isValidUUID = (uuid) => {
     return uuidRegex.test(uuid);
 }
 
+module.exports.isValidRedirectUrl = (url) => {
+    if (!url) return false;
+    try {
+        const parsedUrl = new URL(url);
+        const origin = parsedUrl.origin;
+        const allowedOrigins = (process.env.CORS_ORIGIN || "").split(",");
+        return allowedOrigins.includes(origin);
+    } catch (e) {
+        return false;
+    }
+};
+

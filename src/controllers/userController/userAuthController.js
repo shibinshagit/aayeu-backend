@@ -159,7 +159,16 @@ module.exports.registerUser = catchAsync(async (req, res, next) => {
 
     // ✅ Generate magic token & link
     const token = generateMagicToken(user.id);
-    const magicLink = `${process.env.CLIENT_URL}/auth?type=magic-login&token=${token}`;
+
+    const { redirectUrl } = req.body;
+    const { isValidRedirectUrl } = require("../../utils/basicValidation");
+
+    let baseUrl = process.env.CLIENT_URL;
+    if (redirectUrl && isValidRedirectUrl(redirectUrl)) {
+      baseUrl = redirectUrl;
+    }
+
+    const magicLink = `${baseUrl}/auth?type=magic-login&token=${token}`;
 
     // ✅ Save token to DB
     await UserServices.updateUserMagicToken(
@@ -173,9 +182,8 @@ module.exports.registerUser = catchAsync(async (req, res, next) => {
 
     // ✅ Send magic link email
     const mailOptions = {
-      from: `"${
-        process.env.EMAIL_SENDER_NAME || "AAYEU Support"
-      }" <no-reply@aayeu.com>`,
+      from: `"${process.env.EMAIL_SENDER_NAME || "AAYEU Support"
+        }" <no-reply@aayeu.com>`,
       to: email,
       subject: "Welcome to AAYEU — Complete Your Login",
       html: `
@@ -225,7 +233,16 @@ module.exports.sendMagicLink = catchAsync(async (req, res, next) => {
 
     // ✅ Generate magic link token
     const token = generateMagicToken(user.id);
-    const magicLink = `${process.env.CLIENT_URL}/auth?type=magic-login&token=${token}`;
+
+    const { redirectUrl } = req.body;
+    const { isValidRedirectUrl } = require("../../utils/basicValidation");
+
+    let baseUrl = process.env.CLIENT_URL;
+    if (redirectUrl && isValidRedirectUrl(redirectUrl)) {
+      baseUrl = redirectUrl;
+    }
+
+    const magicLink = `${baseUrl}/auth?type=magic-login&token=${token}`;
 
     // ✅ Save token in DB
     await UserServices.updateUserMagicToken(
@@ -239,9 +256,7 @@ module.exports.sendMagicLink = catchAsync(async (req, res, next) => {
 
     // ✅ Send Magic Link Email
     const mailOptions = {
-      from: `"${process.env.EMAIL_SENDER_NAME || "Support"}" <${
-        process.env.SMTP_USER
-      }>`,
+      from: `"${process.env.EMAIL_SENDER_NAME || "Support"}" <no-reply@aayeu.com>`,
       to: email,
       subject: "Your Magic Login Link",
       html: `
@@ -677,7 +692,7 @@ module.exports.updateAddress = catchAsync(async (req, res, next) => {
       updatedRows[0]
     );
   } catch (err) {
-    await client.query("ROLLBACK").catch(() => {});
+    await client.query("ROLLBACK").catch(() => { });
     console.error("updateAddress error:", err);
     return next(new AppError(err.message || "Failed to update address", 500));
   } finally {
@@ -725,7 +740,7 @@ module.exports.deleteAddress = catchAsync(async (req, res, next) => {
       deleted?.rows[0]
     );
   } catch (err) {
-    await client.query("ROLLBACK").catch(() => {});
+    await client.query("ROLLBACK").catch(() => { });
     console.error("deleteAddress error:", err);
     return next(new AppError(err.message || "Failed to delete address", 500));
   } finally {
@@ -766,7 +781,7 @@ module.exports.googleAuthCallback = catchAsync(async (req, res, next) => {
       redirectTo + `/auth?type=google&accessToken=${accessToken}`
     ); // frontend route to handle post-login state
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => {});
+    await client.query("ROLLBACK").catch(() => { });
     return next(new AppError(error.message || "Google auth failed", 500));
   } finally {
     client.release();

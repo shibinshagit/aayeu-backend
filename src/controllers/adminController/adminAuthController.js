@@ -42,8 +42,17 @@ module.exports.sendAdminMagicLink = catchAsync(async (req, res, next) => {
         const admin = rows[0];
         if (!admin) throw new AppError("Admin not found", 404);
 
+        const { redirectUrl } = req.body;
+        const { isValidRedirectUrl } = require("../../utils/basicValidation");
+
         const token = generateMagicToken(admin.id);
-        const magicLink = `${process.env.ADMIN_URL}/auth?type=magic-login&token=${token}`;
+
+        let baseUrl = process.env.ADMIN_URL;
+        if (redirectUrl && isValidRedirectUrl(redirectUrl)) {
+            baseUrl = redirectUrl;
+        }
+
+        const magicLink = `${baseUrl}/auth?type=magic-login&token=${token}`;
 
         await client.query(
             `UPDATE admins SET magic_token = $1, magic_token_expires = $2 WHERE id = $3`,
